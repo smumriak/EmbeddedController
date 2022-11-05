@@ -374,73 +374,35 @@ int hotkey_F1_F12(uint16_t *key_code, uint16_t fn, int8_t pressed)
 
 int functional_hotkey(uint16_t *key_code, int8_t pressed)
 {
-	const uint16_t prss_key = *key_code;
 	uint8_t bl_brightness = 0;
+	do {
+		if (*key_code != SCANCODE_SPACE) { break; }
+		if (!fn_table_set(pressed, KB_FN_SPACE)) { break; }
+		if (pressed == false) { break; }
 
-	switch (prss_key) {
-	case SCANCODE_ESC: /* TODO: FUNCTION_LOCK */
-		if (fn_table_set(pressed, KB_FN_ESC)) {
-			if (pressed) {
-				if (Fn_key & FN_LOCKED)
-					Fn_key &= ~FN_LOCKED;
-				else
-					Fn_key |= FN_LOCKED;
-			}
-			return EC_ERROR_UNIMPLEMENTED;
+		bl_brightness = kblight_get();
+		switch (bl_brightness) {
+		case KEYBOARD_BL_BRIGHTNESS_LOW:
+			bl_brightness = KEYBOARD_BL_BRIGHTNESS_MED;
+			break;
+		case KEYBOARD_BL_BRIGHTNESS_MED:
+			bl_brightness = KEYBOARD_BL_BRIGHTNESS_HIGH;
+			break;
+		case KEYBOARD_BL_BRIGHTNESS_HIGH:
+			hx20_kblight_enable(0);
+			bl_brightness = KEYBOARD_BL_BRIGHTNESS_OFF;
+			break;
+		default:
+		case KEYBOARD_BL_BRIGHTNESS_OFF:
+			hx20_kblight_enable(1);
+			bl_brightness = KEYBOARD_BL_BRIGHTNESS_LOW;
+			break;
 		}
-		break;
-	case SCANCODE_B:
-		/* BREAK_KEY */
-		if (fn_table_set(pressed, KB_FN_B)) {
-			if (pressed) {
-				simulate_keyboard(0xe07e, 1);
-				simulate_keyboard(0xe0, 1);
-				simulate_keyboard(0x7e, 0);
-			}
-			return EC_ERROR_UNIMPLEMENTED;
-		}
-		break;
-	case SCANCODE_P:
-		/* PAUSE_KEY */
-		if (fn_table_set(pressed, KB_FN_P)) {
-			if (pressed) {
-				simulate_keyboard(0xe114, 1);
-				simulate_keyboard(0x77, 1);
-				simulate_keyboard(0xe1, 1);
-				simulate_keyboard(0x14, 0);
-				simulate_keyboard(0x77, 0);
-			}
-			return EC_ERROR_UNIMPLEMENTED;
-		}
-		break;
-	case SCANCODE_SPACE:	/* TODO: TOGGLE_KEYBOARD_BACKLIGHT */
-		if (fn_table_set(pressed, KB_FN_SPACE)) {
-			if (pressed) {
-				bl_brightness = kblight_get();
-				switch (bl_brightness) {
-				case KEYBOARD_BL_BRIGHTNESS_LOW:
-					bl_brightness = KEYBOARD_BL_BRIGHTNESS_MED;
-					break;
-				case KEYBOARD_BL_BRIGHTNESS_MED:
-					bl_brightness = KEYBOARD_BL_BRIGHTNESS_HIGH;
-					break;
-				case KEYBOARD_BL_BRIGHTNESS_HIGH:
-					hx20_kblight_enable(0);
-					bl_brightness = KEYBOARD_BL_BRIGHTNESS_OFF;
-					break;
-				default:
-				case KEYBOARD_BL_BRIGHTNESS_OFF:
-					hx20_kblight_enable(1);
-					bl_brightness = KEYBOARD_BL_BRIGHTNESS_LOW;
-					break;
-				}
-				kblight_set(bl_brightness);
-			}
-			/* we dont want to pass the space key event to the OS */
-			return EC_ERROR_UNIMPLEMENTED;
-		}
-		break;
-	}
+		kblight_set(bl_brightness);
+
+		return EC_ERROR_UNIMPLEMENTED;
+	} while(false);
+
 	return EC_SUCCESS;
 }
 
