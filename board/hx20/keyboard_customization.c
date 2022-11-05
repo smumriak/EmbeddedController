@@ -372,47 +372,6 @@ int hotkey_F1_F12(uint16_t *key_code, uint16_t fn, int8_t pressed)
 	return EC_SUCCESS;
 }
 
-
-int hotkey_special_key(uint16_t *key_code, int8_t pressed)
-{
-	const uint16_t prss_key = *key_code;
-
-	switch (prss_key) {
-	case SCANCODE_DELETE:  /* TODO: INSERT */
-		if (fn_table_set(pressed, KB_FN_DELETE))
-			*key_code = 0xe070;
-		break;
-	case SCANCODE_K:  /* TODO: SCROLL_LOCK */
-		if (fn_table_set(pressed, KB_FN_K))
-			*key_code = SCANCODE_SCROLL_LOCK;
-		break;
-	case SCANCODE_S:  /* TODO: SYSRQ */
-		/*if (!fn_table_set(pressed, KB_FN_S))*/
-
-		break;
-	case SCANCODE_LEFT:  /* HOME */
-		if (fn_table_set(pressed, KB_FN_LEFT))
-			*key_code = 0xe06c;
-		break;
-	case SCANCODE_RIGHT:  /* END */
-		if (fn_table_set(pressed, KB_FN_RIGHT))
-			*key_code = 0xe069;
-		break;
-	case SCANCODE_UP:  /* PAGE_UP */
-		if (fn_table_set(pressed, KB_FN_UP))
-			*key_code = 0xe07d;
-		break;
-	case SCANCODE_DOWN:  /* PAGE_DOWN */
-		if (fn_table_set(pressed, KB_FN_DOWN))
-			*key_code = 0xe07a;
-		break;
-	default:
-		return EC_SUCCESS;
-	}
-
-	return EC_SUCCESS;
-}
-
 int functional_hotkey(uint16_t *key_code, int8_t pressed)
 {
 	const uint16_t prss_key = *key_code;
@@ -524,10 +483,6 @@ enum ec_error_list keyboard_scancode_callback(uint16_t *make_code,
 	 */
 	if (!(Fn_key & FN_PRESSED) && !fn_key_table)
 		return EC_SUCCESS;
-
-	r = hotkey_special_key(make_code, pressed);
-	if (r != EC_SUCCESS)
-		return r;
 
 	r = functional_hotkey(make_code, pressed);
 	if (r != EC_SUCCESS)
