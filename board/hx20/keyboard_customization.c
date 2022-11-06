@@ -224,6 +224,7 @@ void board_kblight_init(void)
 #ifdef CONFIG_KEYBOARD_CUSTOMIZATION_COMBINATION_KEY
 #define FN_PRESSED BIT(0)
 #define FN_LOCKED BIT(1)
+#define FN_VIRTUAL_PRESSED BIT(2)
 static uint8_t Fn_key;
 static uint32_t fn_key_table_media;
 static uint32_t fn_key_table;
@@ -243,7 +244,7 @@ int fn_table_media_set(int8_t pressed, uint32_t fn_bit)
 
 int fn_table_set(int8_t pressed, uint32_t fn_bit)
 {
-	if (pressed && (Fn_key & FN_PRESSED)) {
+	if (pressed && (Fn_key & FN_VIRTUAL_PRESSED)) {
 		fn_key_table |= fn_bit;
 		return true;
 	} else if (!pressed && (fn_key_table & fn_bit)) {
@@ -266,6 +267,7 @@ void fnkey_shutdown(void) {
 
 	Fn_key &= ~FN_LOCKED;
 	Fn_key &= ~FN_PRESSED;
+	Fn_key &= ~FN_VIRTUAL_PRESSED;
 }
 DECLARE_HOOK(HOOK_CHIPSET_SHUTDOWN, fnkey_shutdown, HOOK_PRIO_DEFAULT);
 
@@ -280,6 +282,17 @@ void fnkey_startup(void) {
 	}
 }
 DECLARE_HOOK(HOOK_CHIPSET_STARTUP, fnkey_startup, HOOK_PRIO_DEFAULT);
+
+int send_fn_virtual_unpress()
+{
+	if (!(Fn_key & FN_VIRTUAL_PRESSED)) {
+		return 0;
+	}
+
+	Fn_key &= ~(FN_VIRTUAL_PRESSED);
+	simulate_keyboard(SCANCODE_FN, 0);
+	return 1;
+}
 
 int hotkey_F1_F12(uint16_t *key_code, uint16_t fn, int8_t pressed)
 {
@@ -333,6 +346,7 @@ int hotkey_F1_F12(uint16_t *key_code, uint16_t fn, int8_t pressed)
 		}
 		break;
 	case SCANCODE_F9:  /* EXTERNAL_DISPLAY */
+	// DAFUQ IS THIS SHIT JESUS FUCKING CHRIST
 		if (fn_table_media_set(pressed, KB_FN_F9)) {
 			if (pressed) {
 				simulate_keyboard(SCANCODE_LEFT_WIN, 1);
@@ -362,6 +376,7 @@ int hotkey_F1_F12(uint16_t *key_code, uint16_t fn, int8_t pressed)
 		break;
 	case SCANCODE_F12:  /* TODO: FRAMEWORK */
 		/* Media Select scan code */
+		// WHY MOTHERFUCKERS???? WHY????
 		if (fn_table_media_set(pressed, KB_FN_F12))
 			*key_code = 0xE050;
 		break;
@@ -420,9 +435,9 @@ enum ec_error_list keyboard_scancode_callback(uint16_t *make_code,
 	 */
 	if (pressed_key == SCANCODE_FN) {
 		if (pressed) {
-			Fn_key |= FN_PRESSED;
+			Fn_key |= FN_PRESSED | FN_VIRTUAL_PRESSED;
 		} else {
-			Fn_key &= ~FN_PRESSED;
+			Fn_key &= ~(FN_PRESSED | FN_VIRTUAL_PRESSED);
 		}
 		return EC_SUCCESS;
 	}
